@@ -1,7 +1,6 @@
 import requests
 from .exceptions import *
 
-
 class SupportsPartialContentProtocol():
     def __init__(self, url: str) -> None:
         self.url = url
@@ -12,6 +11,7 @@ class SupportsPartialContentProtocol():
 
     def supports_partialcontent(self):
         "Only gets called on `SupportsPartialContentProtocol.__init__` and will NOT return anything. Use `self.supports_partial_content` instead."
+        supports = None
         r = requests.head(
             self.url,
         )
@@ -19,12 +19,20 @@ class SupportsPartialContentProtocol():
         r = requests.get(
             self.url,
             headers = {
-                "Range": "bytes=0-1"
-            }
-        )
-        sCode = r.status_code
-        supports = True if sCode == 206 else False if sCode == 416 else None
+                "Range": "bytes=0-0"
+            },
+            stream = True #                                                                                                                                _
+        )                                                                                                                                                 # |
+        for chunk in r.iter_content(chunk_size = 1024):                                                                                                   # |
+            if len(chunk) > 1 and r.status_code == 200:                                                                                                                            # | 2nd paragraph in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Range
+                r.close() # server doesnt support PartialContent. Close stream to prevent unwanted downloads & excessive network/data usage                 |
+                supports = False                                                                                                                      #    _|
+        
+        if not isinstance(supports, bool):
+            supports = True if r.status_code == 206 else None
         if supports == None:
+            if r.status_code == 416:
+                raise UnexpectedResponseError("File has no size (0 bytes)")
             raise UnexpectedResponseError("Request failed. (.status_code != 206 or 416)")
         elif supports == False:
             raise DoesNotSupportPartialContentError("The server does not support PartialContent downloading.")

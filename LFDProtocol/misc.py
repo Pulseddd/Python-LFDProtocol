@@ -12,6 +12,16 @@ class FileSizeUnit(Enum):
     YOTTABYTE = (1208925819614629174706176, 1237940039285380274899124223)
     BRONTABYTE = (1237940039285380274899124224, 1267650600228229401496703205375)
 
+class FileSizeThread(Enum):
+    AntLike = 1
+    Tiny = 2
+    Small = 3
+    Medium = 5
+    Big = 7
+    Large = 10
+    Huge = 20
+    
+
 def length_to_readable(size):
     units = [("B", 1), ("KB", 1024), ("MB", 1024 ** 2), ("GB", 1024 ** 3), ("TB", 1024 ** 4), ("PB", 1024 ** 5), ("EB", 1024 ** 6), ("ZB", 1024 ** 7), ("YB", 1024 ** 8), ("BB", 1024 ** 9)]
     for unit, unit_size in units:
