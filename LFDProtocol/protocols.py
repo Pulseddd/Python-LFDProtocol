@@ -30,3 +30,7 @@ class SupportsPartialContentProtocol():
             raise DoesNotSupportPartialContentError("The server does not support PartialContent downloading.")
         elif supports == True:
             self.supports_partial_content = True
+
+class PartialContentProtocol(SupportsPartialContentProtocol):
+    def __init__(self, url: str) -> None:
+        super().__init__(url)
