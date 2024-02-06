@@ -20,6 +20,10 @@ class DownloadThreads(Enum):
     SEPTA_THREADS = 7
     DECA_THREADS = 10
     ICOSA_THREADS = 20
+    HIGH_THREADS = 30
+    MEGA_THREADS = 40
+    ULTRA_THREADS = 50
+    TOO_MANY_THREADS = 100
 
     
 

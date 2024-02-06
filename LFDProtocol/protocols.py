@@ -12,6 +12,7 @@ class ServerPartialContentSupport():
         self.supports_partial_content = None
         "Supports 206-PartialContent or not"
         self.content_length: int = None
+        self.filename: str = ""
         self.supports_partialcontent()
 
     def supports_partialcontent(self):
@@ -19,8 +20,11 @@ class ServerPartialContentSupport():
         supports = None
         r = requests.head(
             self.url,
-            timeout = 999999
+            timeout = 999999,
+            allow_redirects = True
         )
+        self.filename = str(r.headers.get("content-disposition", None)).split("attachment; ")[1].split("filename=")[1]
+        ic(self.filename)
         self.content_length = int(r.headers["content-length"])
         r = requests.get(
             self.url,
@@ -111,12 +115,14 @@ class PartialContentProtocol(ServerPartialContentSupport):
             raise UnexpectedResponseError(f"An unexpected response was recieved: {r.status_code}")
     
 class File(PartialContentProtocol):
-    def __init__(self, url: str, file_name: str, _threads: misc.DownloadThreads = misc.DownloadThreads.ICOSA_THREADS) -> None:
+    def __init__(self, url: str, file_name: str = None, _threads: misc.DownloadThreads = misc.DownloadThreads.ICOSA_THREADS) -> None:
         super().__init__(url, _threads)
         self.file_name = file_name
+        self.name_from_contentdisposition = lambda header: re.match(r"filename=(.+)", header) if header else None
 
     def download(self):
         content = self.download_content()
-        with open(self.file_name, "wb") as f:
+        ic(self.filename)
+        with open(f"{self.file_name if self.file_name else self.filename if self.filename else 'unknown_file'}", "wb") as f:
             f.write(content)
         ic("Finished downloading!")
