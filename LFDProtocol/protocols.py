@@ -1,5 +1,6 @@
 import requests
 from .exceptions import *
+from icecream import ic
 
 class SupportsPartialContentProtocol():
     def __init__(self, url: str) -> None:
@@ -12,10 +13,14 @@ class SupportsPartialContentProtocol():
     def supports_partialcontent(self):
         "Only gets called on `SupportsPartialContentProtocol.__init__` and will NOT return anything. Use `self.supports_partial_content` instead."
         supports = None
+        ic("requests.head()...")
         r = requests.head(
             self.url,
+            timeout = 999999
         )
-        self.content_length = int(r.headers["content-length"])
+        ic(r.status_code)
+        self.content_length = ic(int(r.headers["content-length"]))
+        ic("requests.get(stream = True)...")
         r = requests.get(
             self.url,
             headers = {
@@ -27,6 +32,7 @@ class SupportsPartialContentProtocol():
             if len(chunk) > 1 and r.status_code == 200:                                                                                                   # | 2nd paragraph in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Range
                 r.close() # server doesnt support PartialContent. Close stream to prevent unwanted downloads & excessive network/data usage                 |
                 supports = False                                                                                                                      #    _|
+                ic("Stream closed due to lack of PartialContent support")
         
         if not isinstance(supports, bool):
             supports = True if r.status_code == 206 else None
@@ -34,7 +40,7 @@ class SupportsPartialContentProtocol():
         if supports == None:
             if r.status_code == 416:
                 raise UnexpectedResponseError("File has no size (0 bytes)")
-            raise UnexpectedResponseError("Request failed. (.status_code != 206 or 416)")
+            raise UnexpectedResponseError(f"Request failed. {r.status_code} (!= 206 or 416)")
         elif supports == False:
             raise DoesNotSupportPartialContentError("The server does not support PartialContent downloading.")
         elif supports == True:
