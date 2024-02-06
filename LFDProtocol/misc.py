@@ -1,5 +1,4 @@
 from enum import Enum
-from icecream import ic
 
 class FileSizeUnit(Enum):
     BYTE = (0, 1023)
@@ -13,14 +12,15 @@ class FileSizeUnit(Enum):
     YOTTABYTE = (1208925819614629174706176, 1237940039285380274899124223)
     BRONTABYTE = (1237940039285380274899124224, 1267650600228229401496703205375)
 
-class FileSizeThread(Enum):
-    AntLike = 1
-    Tiny = 2
-    Small = 3
-    Medium = 5
-    Big = 7
-    Large = 10
-    Huge = 20
+class DownloadThreads(Enum):
+    SINGLE_THREAD = 1
+    DOUBLE_THREADS = 2
+    TRIPLE_THREADS = 3
+    PENTA_THREADS = 5
+    SEPTA_THREADS = 7
+    DECA_THREADS = 10
+    ICOSA_THREADS = 20
+
     
 
 def length_to_readable(size):
@@ -42,9 +42,7 @@ def divide_ranges(content_length: int, thread_amt: int):
         start = i * chunk_size
         if i != thread_amt - 1:
             end = start + chunk_size - 1
-            ic("calculated non-end range")
         else:
-            ic("calculated end range")
             end = ""
             chunk = content_length - start
         ranges.append(
@@ -52,5 +50,4 @@ def divide_ranges(content_length: int, thread_amt: int):
                 "range": f"bytes={start}-{end}"
             }
         )
-    ranges.append(ic(f"Each thread will download ~{length_to_readable(chunk)}"))
     return ranges
