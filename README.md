@@ -1,6 +1,7 @@
 # Python-LFDProtocol
  A "Protocol" to download large file by downloading certain parts of a file and then combining it at the end, like how IDM does.
- (LFD stands for LargeFileDownload btw, yeah its cringe i know) lemme know what i should change it to
+# Notes
+- The protocol works best when it comes to large files, however, lacks performance when it comes to small files. Manual requests/downloads are usually faster than the protocol if it isnt set to `SINGLE_THREAD`
 ### Example:
 ```python
 import LFDProtocol

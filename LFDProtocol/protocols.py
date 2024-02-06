@@ -53,32 +53,49 @@ class ServerPartialContentSupport():
 
 class PartialContentProtocol(ServerPartialContentSupport):
     def __init__(self, url: str, _threads: misc.DownloadThreads = misc.DownloadThreads.PENTA_THREADS) -> None:
-        super().__init__(url)
         self.thread_amt = _threads
-        self.estimated_size = misc.length_to_readable(self.content_length)
-        self.ranges: list[dict[str, str]] = misc.divide_ranges(self.content_length, self.thread_amt.value)
-        self.threads: list[threading.Thread] = []
-        self.content: list[tuple[int, bytes]] = []
-        self.start_end_regex = r"bytes=(.+)-(.+)"
+        if _threads != misc.DownloadThreads.SINGLE_THREAD:
+            super().__init__(url)
+            self.estimated_size = misc.length_to_readable(self.content_length)
+            self.ranges: list[dict[str, str]] = misc.divide_ranges(self.content_length, self.thread_amt.value)
+            self.threads: list[threading.Thread] = []
+            self.content: list[tuple[int, bytes]] = []
+            self.start_end_regex = r"bytes=(.+)-(.+)"
+        else:
+            self.url = url
+        
 
     def download_content(self):
-        estimatedSize = f"Estimated size: ~{self.estimated_size}"
-        ic(estimatedSize)
-        start, end = re.search(self.start_end_regex, self.ranges[1]['range']).groups()
-        estimatedSizePerThread = f"Estimated size per thread: {misc.length_to_readable(int(end) - int(start))}"
-        ic(estimatedSizePerThread)
-        self.prepare_threads()
-        for thread in self.threads:
-            thread.start()
-        for thread in self.threads:
-            thread.join()
-        data: bytes = b""
-        for _ in range(self.thread_amt.value):
-            for i, c in self.content:
-                if _ == i:
-                    data += c if c else b""
-                else: continue
-        return data
+        if self.thread_amt != misc.DownloadThreads.SINGLE_THREAD:
+            estimatedSize = f"Estimated size: ~{self.estimated_size}"
+            ic(estimatedSize)
+            if len(self.ranges) > 2:
+                start, end = re.search(self.start_end_regex, self.ranges[1]['range']).groups()
+            elif len(self.ranges) == 2:
+                single_patt = r"bytes=(.+)-"
+                match = re.search(single_patt, self.ranges[1]["range"]).group(1)
+                start, end = match, self.content_length + 1
+            estimatedSizePerThread = f"Estimated size per thread: {misc.length_to_readable(int(end) - int(start))}"
+            ic(estimatedSizePerThread)
+            self.prepare_threads()
+            for thread in self.threads:
+                thread.start()
+            for thread in self.threads:
+                thread.join()
+            data: bytes = b""
+            for _ in range(self.thread_amt.value):
+                for i, c in self.content:
+                    if _ == i:
+                        data += c if c else b""
+                    else: continue
+            return data
+        else:
+            r = requests.get(self.url)
+            filename = r.headers.get("content-disposition", None)
+            if filename:
+                filename = filename.split("attachment; ")[1].split("filename=")[1]
+            return r.content, filename
+
         
     def prepare_threads(self):
         for i in range(self.thread_amt.value):
@@ -105,8 +122,8 @@ class PartialContentProtocol(ServerPartialContentSupport):
                     data
                 )
             )
-            done = f"Thread no. {i} done"
-            ic(done)
+            #done = f"Thread no. {i} done"
+            #ic(done)
         elif r.status_code == 200:
             raise DoesNotSupportPartialContentError("Server does not support PartialContent downloading.")
         elif r.status_code == 416:
@@ -121,8 +138,13 @@ class File(PartialContentProtocol):
         
 
     def download(self):
-        content = self.download_content()
-        ic(self.filename)
-        with open(f"{self.file_name if self.file_name else self.filename if self.filename else 'unknown_file'}", "wb") as f:
-            f.write(content)
+        if self.thread_amt != misc.DownloadThreads.SINGLE_THREAD:
+            content = self.download_content()
+            ic(self.filename)
+            with open(f"{self.file_name if self.file_name else self.filename if self.filename else 'unknown_file'}", "wb") as f:
+                f.write(content)
+        else:
+            content, filename = self.download_content()
+            with open(f"{self.file_name if self.file_name else filename if filename else 'unknown_file'}", "wb") as f:
+                f.write(content)
         ic("Finished downloading!")
