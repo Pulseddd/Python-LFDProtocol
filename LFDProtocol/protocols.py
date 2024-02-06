@@ -24,12 +24,13 @@ class SupportsPartialContentProtocol():
             stream = True #                                                                                                                                _
         )                                                                                                                                                 # |
         for chunk in r.iter_content(chunk_size = 1024):                                                                                                   # |
-            if len(chunk) > 1 and r.status_code == 200:                                                                                                                            # | 2nd paragraph in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Range
+            if len(chunk) > 1 and r.status_code == 200:                                                                                                   # | 2nd paragraph in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Range
                 r.close() # server doesnt support PartialContent. Close stream to prevent unwanted downloads & excessive network/data usage                 |
                 supports = False                                                                                                                      #    _|
         
         if not isinstance(supports, bool):
             supports = True if r.status_code == 206 else None
+        
         if supports == None:
             if r.status_code == 416:
                 raise UnexpectedResponseError("File has no size (0 bytes)")

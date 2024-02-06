@@ -32,3 +32,35 @@ def length_to_readable(size):
             break
     size_str = f"{size:.2f}{unit}"
     return size_str
+
+
+def divide_content(content_length, thread_amt):
+    ranges = []
+    chunk_size = content_length // thread_amt
+
+    for i in range(thread_amt):
+        start = i * chunk_size
+        # If this is the last thread, it should handle all remaining bytes
+        end = start + chunk_size - 1 if i != thread_amt - 1 else ""
+        ranges.append(({"range": f"bytes={start}-{end}"}, length_to_readable(int(end) - start)))
+
+    return ranges
+
+def divide_ranges(content_length: int, thread_amt: int):
+    ranges = []
+    chunk_size = content_length // thread_amt
+    chunk: int = None
+    for i in range(thread_amt):
+        start = i * chunk_size
+        if i != thread_amt - 1:
+            end = start + chunk_size - 1
+        else:
+            end = ""
+            chunk = content_length - start
+        ranges.append(
+            {
+                "range": f"bytes={start}-{end}"
+            }
+        )
+    ranges.append(length_to_readable(chunk))
+    return ranges
