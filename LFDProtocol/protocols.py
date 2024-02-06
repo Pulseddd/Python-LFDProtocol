@@ -118,7 +118,7 @@ class File(PartialContentProtocol):
     def __init__(self, url: str, file_name: str = None, _threads: misc.DownloadThreads = misc.DownloadThreads.ICOSA_THREADS) -> None:
         super().__init__(url, _threads)
         self.file_name = file_name
-        self.name_from_contentdisposition = lambda header: re.match(r"filename=(.+)", header) if header else None
+        
 
     def download(self):
         content = self.download_content()
